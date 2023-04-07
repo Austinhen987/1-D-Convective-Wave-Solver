@@ -1,18 +1,3 @@
-# Title         -- AE 7774 HW5
-# Author        -- Austin Hendrickson
-# Date Written  -- 04 April 2023
-# Date Updated  --
-#
-# -------------------------------------------
-# Description
-# -------------------------------------------
-# This code implements a 4th-order central Dispersion-Relation-Preserving (DRP) Scheme (Tam & Webb)
-# to solve the simple 1-D convective wave equation 'du/dt + du/dx = 0'
-#
-# Traditional 4th-order and 6th-order central finite difference schemes will be compared as well
-#
-# All schemes use 3rd-order optimized multi-step time discretization
-
 import numpy as np
 import math
 from array import *
@@ -23,8 +8,8 @@ import matplotlib.pyplot as plt
 x_min = -200
 x_max = 150  # Prescribed domain
 
-dx = 0.5
-dt = 0.01  # Prescribed grid size/timestep size | Suggested sizes will vary based on wave number of initial condition
+dx = 1
+dt = 0.1  # Prescribed grid size/timestep size | Suggested sizes will vary based on wave number of initial condition
 
 x = np.arange(x_min, x_max, dx)
 t = np.arange(0, 100, dt)  # Create space and time vectors
@@ -74,6 +59,49 @@ for ind in x:
 drp_soln[0] = init_cond
 std_4_soln[0] = init_cond
 std_6_soln[0] = init_cond
+
+
+# Group Velocity and wave number calculations
+
+alpha = np.arange(0, math.pi, 0.01)  # Create alpha vector
+
+dn_da_drp = []
+dn_da_4 = []
+dn_da_6 = []
+num_alpha_drp = []
+num_alpha_4 = []
+num_alpha_6 = []  # Declare all lists
+j = 0
+
+# Calculate numerical/real wave number dependence
+
+for val in alpha:
+
+    # This could probably be done better
+    num_alpha_drp.append((am3 * math.sin(val * -3) + am2 * math.sin(val * -2) + am1 * math.sin(val * -1) +
+                          a1 * math.sin(val * 1) + a2 * math.sin(val * 2) + a3 * math.sin(val * 3)))
+
+    num_alpha_4.append(2 * (a1_4 * math.sin(val * 1) + a2_4 * math.sin(val * 2)))
+
+    num_alpha_6.append(2 * (a1_6 * math.sin(val * 1) + a2_6 * math.sin(val * 2) + a3_6 * math.sin(val * 3)))
+
+
+# Calculate group velocity relations
+
+for val2 in alpha:
+
+    if j < len(alpha) - 1:
+
+        dn_drp = (num_alpha_drp[j+1] - num_alpha_drp[j]) / 0.01
+        dn_4 = (num_alpha_4[j+1] - num_alpha_4[j]) / 0.01
+        dn_6 = (num_alpha_6[j+1] - num_alpha_6[j]) / 0.01
+        da = (alpha[j+1] - alpha[j]) / 0.01
+
+        dn_da_drp.append(dn_drp / da)
+        dn_da_4.append(dn_4 / da)
+        dn_da_6.append(dn_6 / da)
+
+    j += 1
 
 
 # ------------------------
@@ -218,7 +246,15 @@ time = 60  # Desired time to plot
 
 # Plotting
 
-fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+fig1, (ax1, ax2) = plt.subplots(2, 1)
+ax1.plot(alpha, num_alpha_drp, alpha, num_alpha_6, alpha, num_alpha_4)
+ax1.set_title('Wave Number Relation')
+
+ax2.plot(alpha[:-1], dn_da_drp, alpha[:-1], dn_da_6, alpha[:-1], dn_da_4)
+ax2.set_title('Group Velocity')
+
+
+fig2, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
 ax1.plot(x, drp_soln[int(time/dt)])
 ax1.set_title('4th-Order DRP')
 
